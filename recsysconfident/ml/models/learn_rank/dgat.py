@@ -76,4 +76,4 @@ class DGAT(TorchModel):
     def predict(self, user_ids, item_ids):
         scores = self.forward(user_ids, item_ids)
         mu = scores[:, 0]
-        return mu, self.embedding_instability(user_ids, item_ids)
+        return mu, torch.zeros_like(mu)

@@ -18,7 +18,9 @@ class Setup:
                  timestamp: str = None,
                  min_inter_per_user: int =72,
                  reevaluate:bool = False,
-                 learn_to_rank:bool=True):
+                 learn_to_rank:bool=True,
+                 k_folds: int = 5):
+
 
         self.model_name = model_name
         self.database_name = database_name
@@ -31,6 +33,7 @@ class Setup:
         self.min_inter_per_user = min_inter_per_user
         self.reevaluate = reevaluate
         self.learn_to_rank = learn_to_rank
+        self.k_folds = k_folds
 
         self.set_rate_range(rate_range)
         self.setup_instance_dir(instance_dir)
@@ -78,5 +81,6 @@ class Setup:
             'min_inter_per_user': self.min_inter_per_user,
             'reevaluate': self.reevaluate,
             'timestamp': time.strftime('%Y-%m-%d-%H-%M-%S'),
-            "learn_to_rank": self.learn_to_rank
+            "learn_to_rank": self.learn_to_rank,
+            "k_folds": self.k_folds
         }

@@ -1,8 +1,6 @@
 {
-  "setup_name": "all",
-  "k_folds": 0,
+  "k_folds": 5,
   "split_position": 0,
-  "runs_folder": "./runs",
   "setups": {
     "ml-1m-learn-rank-cpgatbpr": {
       "database_name": "ml-1m",

@@ -60,7 +60,7 @@ class Dnn(TorchModel):
 
     def predict(self, users_ids, items_ids):
         scores = self.forward(users_ids, items_ids)
-        return scores[:, 0], self.embedding_instability(users_ids, items_ids)
+        return scores[:, 0].squeeze(-1), scores[:, 1].squeeze(-1)
 
     def loss(self, user_ids, item_ids, optimizer):
         optimizer.zero_grad()

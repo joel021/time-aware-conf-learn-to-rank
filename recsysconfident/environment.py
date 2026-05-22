@@ -9,7 +9,6 @@ from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
 from recsysconfident.data_handling.datasets.jester_joke_reader import JesterJokeReader
 from recsysconfident.data_handling.datasets.movie_lens_reader import MovieLensReader
 from recsysconfident.ml.models.dropout_uncertainty import get_MCDropoutRecModel_and_dataloader
-from recsysconfident.ml.models.k_nearest_neighbors import get_knn_cosine_basic
 from recsysconfident.ml.models.learn_rank.lightgcn import get_lightgcn_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.ua_gat import get_uagat_model_and_dataloader
 
@@ -18,7 +17,6 @@ from recsysconfident.ml.models.learn_rank.dgat import get_dgat_model_and_dataloa
 from recsysconfident.ml.models.learn_rank.dnn import get_dnn_and_dl
 from recsysconfident.ml.models.learn_rank.mf_clustering import get_learn_rank_att_cluster_and_dl
 from recsysconfident.ml.models.learn_rank.mf import get_mf_model_and_dl
-from recsysconfident.ml.models.multivaeracmodel import get_multivae_m_dl
 
 
 class Environment:
@@ -32,7 +30,9 @@ class Environment:
                  conf_calibration: bool=False,
                  min_inter_per_user: int=10,
                  learn_to_rank: bool=False,
-                 shuffle: bool=True):
+                 shuffle: bool=True,
+                 k_folds: int = 5):
+
         self.work_dir: str = None
         self.dataset_info: DatasetInfo = None
         self.batch_size = batch_size
@@ -44,6 +44,7 @@ class Environment:
         self.min_inter_per_user = min_inter_per_user
         self.learn_to_rank = learn_to_rank
         self.shuffle = shuffle
+        self.k_folds = k_folds
 
         self.instance_dir = instance_dir
         self.model_uri = f"{self.instance_dir}/model-{self.split_position}.pth"
@@ -75,7 +76,8 @@ class Environment:
             with open(f"{self.root_path}/data/{self.database_name}/info.json") as f:
                 info = json.load(f)
             self.dataset_info = DatasetInfo(**info, database_name=self.database_name, batch_size=self.batch_size,
-                                            root_uri=self.root_path, split_run_uri=self.split_run_uri)
+                                            root_uri=self.root_path, split_run_uri=self.split_run_uri,
+                                            k_folds=self.k_folds, split_position=self.split_position)
         else:
             raise FileNotFoundError("Info file does not exists. Check if the dataset name is correct.")
 
@@ -99,9 +101,7 @@ class Environment:
             "mf-cluster": get_learn_rank_att_cluster_and_dl,
             "dnn": get_dnn_and_dl,
             "lightgcn": get_lightgcn_model_and_dataloader,
-            "multvae": get_multivae_m_dl,
-            "dropout": get_MCDropoutRecModel_and_dataloader,
-            "knn": get_knn_cosine_basic
+            "dropout": get_MCDropoutRecModel_and_dataloader
         }
 
         if not self.database_name in self.database_name_fn:
