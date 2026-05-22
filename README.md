@@ -57,23 +57,8 @@ poetry run pytest tests
 ## 4. Key Design Choices & Architecture
 
 ### A. Time Series Cross-Validation
-- **Strategy**: Instead of randomized Monte Carlo cross-validation, the framework uses a chronological **Time Series Cross-Validation** strategy.
+- **Strategy**: Instead of randomized cross-validation, the framework uses a chronological **Time Series Cross-Validation** strategy.
 - **Data Splitting**:
   - The dataset is sorted chronologically and partitioned into $k$ splits.
   - For fold $i$, folds $[0 \dots i]$ are used for training (`ratings.fit.csv`), and fold $i+1$ is used for evaluation/testing (`ratings.test.csv`).
   - No physical validation split is written to disk. Early stopping is performed using a duplicated in-memory `val_df` mapped from the test set.
-
-### B. Enforced Learn-to-Rank (LTR) Focus
-- The system is configured globally to operate under a Learn-to-Rank approach (`learn_to_rank = True`).
-- **Binarization**: Ratings above a specified relevance threshold are binarized to `1.0` (positives), and ratings below the threshold are mapped to `0.0` (negatives). Both types of interactions are preserved in the training and testing datasets on disk.
-- **Negative Feedback in Training**:
-  - To properly compute BPR loss, the user's positive interactions dictionary (`self.items_per_user`) is built using only positive interactions (`relevance == 1`).
-  - Consequently, low-relevance (`relevance == 0`) and unobserved items are correctly treated as negatives by the BPR negative sampler.
-  - Training dataloaders filter incoming training data to keep only `relevance == 1` samples, while test dataloaders evaluate on the full, unfiltered test splits.
-
-### C. Distance Metrics & BPR Errors under LTR
-- **Distance Metrics**: Since BPR scores are unconstrained real values representing relative preference (and not absolute rating predictions), standard distance metrics like MAE and RMSE are bypassed and return `0.0` when running in Learn-to-Rank mode.
-- **BPR Error Calculation**: BPR errors are restricted exclusively to actual positive interactions (`relevance == 1`). Negative test interactions (`relevance == 0`) have their negative predicted score set to `0.0` and their elementwise BPR error zeroed out.
-
-### D. Removal of Confidence Calibration
-- The confidence calibration feature has been completely removed from the system. `conf_calibration` is globally set to `False` by default, and all threshold-tuning, calibration loops, and calibrated metrics outputs have been simplified/deleted to ensure performance and simplicity.

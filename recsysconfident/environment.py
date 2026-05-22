@@ -8,7 +8,7 @@ from recsysconfident.data_handling.datasets.csv_reader import CsvReader
 from recsysconfident.data_handling.datasets.datasetinfo import DatasetInfo
 from recsysconfident.data_handling.datasets.jester_joke_reader import JesterJokeReader
 from recsysconfident.data_handling.datasets.movie_lens_reader import MovieLensReader
-from recsysconfident.ml.models.dropout_uncertainty import get_MCDropoutRecModel_and_dataloader
+from recsysconfident.ml.models.learn_rank.dropout_uncertainty import get_MCDropoutRecModel_and_dataloader
 from recsysconfident.ml.models.learn_rank.lightgcn import get_lightgcn_model_and_dataloader
 from recsysconfident.ml.models.learn_rank.ua_gat import get_uagat_model_and_dataloader
 
@@ -17,6 +17,7 @@ from recsysconfident.ml.models.learn_rank.dgat import get_dgat_model_and_dataloa
 from recsysconfident.ml.models.learn_rank.dnn import get_dnn_and_dl
 from recsysconfident.ml.models.learn_rank.mf_clustering import get_learn_rank_att_cluster_and_dl
 from recsysconfident.ml.models.learn_rank.mf import get_mf_model_and_dl
+from recsysconfident.ml.models.learn_rank.ua_lightgcn import get_ualightgcn_model_and_dataloader
 
 
 class Environment:
@@ -101,6 +102,7 @@ class Environment:
             "mf-cluster": get_learn_rank_att_cluster_and_dl,
             "dnn": get_dnn_and_dl,
             "lightgcn": get_lightgcn_model_and_dataloader,
+            "ualightgcn": get_ualightgcn_model_and_dataloader,
             "dropout": get_MCDropoutRecModel_and_dataloader
         }
 
