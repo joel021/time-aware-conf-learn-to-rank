@@ -4,10 +4,9 @@ package: recsysconfident.ml.fit_eval
 import pandas as pd
 from pandas import DataFrame
 
-from recsysconfident.constants import RANK_SCORES_COL, NEG_FLAG_COL
+from recsysconfident.constants import RANK_SCORES_COL
 from recsysconfident.data_handling.miscellaneous import min_max_norm
 from recsysconfident.environment import Environment
-from recsysconfident.ml.distance_metrics import mae, rmse
 from recsysconfident.ml.ranking.conf_aware_rank_metrics import ConfAwareRankingMetrics
 
 
@@ -34,8 +33,6 @@ def ranking_scores(candidates_df: DataFrame, environ: Environment, k=10) -> dict
 
 def evaluate(split_df: pd.DataFrame, environ: Environment) -> dict:
 
-    distance_metrics = get_distance_metrics(split_df, environ)
-
     if RANK_SCORES_COL in split_df.columns:
         split_df.loc[:, environ.dataset_info.r_pred_col] = split_df[RANK_SCORES_COL]
 
@@ -45,22 +42,4 @@ def evaluate(split_df: pd.DataFrame, environ: Environment) -> dict:
     ranking_10metrics = ranking_scores(split_df, environ, 10)
     ranking_3metrics = ranking_scores(split_df, environ,  3)
 
-    return {**distance_metrics, **ranking_10metrics, **ranking_3metrics}
-
-def get_distance_metrics(split_df: pd.DataFrame, environ: Environment):
-    if environ.learn_to_rank:
-        return {
-            "rmse": 0.0,
-            "mae": 0.0,
-        }
-
-    non_negative_sampled_df = split_df[split_df[NEG_FLAG_COL] == 0] #We don't actually know the true score for the negative samples since they are non-observed items.
-    y_true = non_negative_sampled_df[environ.dataset_info.relevance_col].values
-    y_pred = non_negative_sampled_df[environ.dataset_info.r_pred_col].values
-    mae_score = mae(y_true, y_pred)
-    rmse_score = rmse(y_true, y_pred)
-
-    return {
-        "rmse": rmse_score,
-        "mae": mae_score,
-    }
+    return {**ranking_10metrics, **ranking_3metrics}

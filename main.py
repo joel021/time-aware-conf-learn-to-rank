@@ -57,10 +57,9 @@ def main(setup: Setup, shuffle_train_split: bool = False):
 
     export_setup(environ, setup.to_dict())
     eval_df, test_df = export_elementwise_error(model, environ, device)
-    eval_metrics = evaluate(eval_df, environ)
     test_metrics = evaluate(test_df, environ)
     
-    export_metrics(environ, {"eval": eval_metrics, "test": test_metrics})
+    export_metrics(environ, {"test": test_metrics})
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
