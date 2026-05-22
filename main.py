@@ -43,7 +43,6 @@ def main(setup: Setup, shuffle_train_split: bool = False):
                           instance_dir=setup.instance_dir,
                           split_position=setup.split_position,
                           batch_size=setup.batch_size,
-                          conf_calibration=setup.conf_calibration,
                           min_inter_per_user=setup.min_inter_per_user,
                           learn_to_rank=setup.learn_to_rank,
                           k_folds=setup.k_folds
@@ -58,11 +57,8 @@ def main(setup: Setup, shuffle_train_split: bool = False):
 
     export_setup(environ, setup.to_dict())
     eval_df, test_df = export_elementwise_error(model, environ, device)
-    conf_10_3threshold = (None, None)
-    eval_metrics = evaluate(eval_df, environ, conf_10_3threshold)
-    if 'conf_threshold@10' in eval_metrics:
-        conf_10_3threshold = (float(eval_metrics['conf_threshold@10']), float(eval_metrics['conf_threshold@3']))
-    test_metrics = evaluate(test_df, environ, conf_10_3threshold)
+    eval_metrics = evaluate(eval_df, environ)
+    test_metrics = evaluate(test_df, environ)
     
     export_metrics(environ, {"eval": eval_metrics, "test": test_metrics})
 

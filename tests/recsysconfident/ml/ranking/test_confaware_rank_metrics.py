@@ -26,30 +26,20 @@ class TestRankMetrics(unittest.TestCase):
                                 database_name="ml-1m")
         self.rank_metrics = ConfAwareRankingMetrics(data_info)
 
-    def test_rank_metrics_at_k_conf(self):
-
-        users_scores = self.rank_metrics.rank_metrics(self.df, 3, 0.5)
-        assert len(users_scores) == 1, "The number of users should 1."
-
     def test_rank_metrics_at_k(self):
 
-        users_scores = self.rank_metrics.rank_metrics(self.df, 3, -1)
+        users_scores = self.rank_metrics.rank_metrics(self.df, 3)
         assert len(users_scores) == 1, "The number of users should 1."
 
     def test_rank_metrics_all_metrics(self):
 
-        users_scores = self.rank_metrics.rank_metrics(self.df, 3, -1)
+        users_scores = self.rank_metrics.rank_metrics(self.df, 3)
         assert len(users_scores[0]) == 4, "There is 4 rank metrics"
 
     def test_users_mean_std_rank_metrics(self):
-        mean, std = self.rank_metrics.users_mean_std_rank_metrics(self.df, 3, -1)
+        mean, std = self.rank_metrics.users_mean_std_rank_metrics(self.df, 3)
         assert len(mean) == 4, "There is mean of 4 rank metrics."
 
     def test_users_mean_std_rank_metrics_std(self):
-        mean, std = self.rank_metrics.users_mean_std_rank_metrics(self.df, 3, -1)
+        mean, std = self.rank_metrics.users_mean_std_rank_metrics(self.df, 3)
         assert len(std) == 4, "There is std of 4 rank metrics."
-
-    def test_conf_filter(self):
-
-        filtered_df = self.rank_metrics.conf_filter(self.df, 0.5)
-        print(filtered_df)

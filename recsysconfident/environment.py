@@ -40,7 +40,7 @@ class Environment:
         self.database_name = database_name
         self.split_position = split_position
         self.root_path = root_path
-        self.conf_calibration = conf_calibration
+        self.conf_calibration = False
         self.min_inter_per_user = min_inter_per_user
         self.learn_to_rank = True
         self.shuffle = shuffle

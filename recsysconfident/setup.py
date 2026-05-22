@@ -24,7 +24,7 @@ class Setup:
 
         self.model_name = model_name
         self.database_name = database_name
-        self.conf_calibration = conf_calibration
+        self.conf_calibration = False
         self.split_position = split_position
         self.fit_mode = fit_mode
         self.batch_size = batch_size

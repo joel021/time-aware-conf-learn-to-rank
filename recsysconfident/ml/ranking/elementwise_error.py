@@ -20,7 +20,7 @@ def elementwise_pos_neg_scores(model, split_df: pd.DataFrame, environ: Environme
         pos_indices = split_df[environ.dataset_info.relevance_col] >= environ.dataset_info.ratio_t * \
                       environ.dataset_info.rate_range[1]
 
-    positive_split_df = split_df[pos_indices]
+    positive_split_df = split_df[pos_indices].copy()
 
     neg_true, neg_pred, neg_conf = obtain_neg_scores(model,
                                                      torch.from_numpy(
@@ -30,22 +30,22 @@ def elementwise_pos_neg_scores(model, split_df: pd.DataFrame, environ: Environme
     positive_split_df.loc[:, environ.dataset_info.relevance_col] = 1
     positive_split_df.loc[:, "neg_pred"], positive_split_df.loc[:, "neg_conf"] = neg_pred, neg_conf
 
-    neg_split_df = split_df[~pos_indices]
-    neg_true, neg_pred, neg_conf = obtain_neg_scores(model,
-                                                     torch.from_numpy(
-                                                         neg_split_df[environ.dataset_info.user_col].values),
-                                                     environ.dataset_info,
-                                                     device)
-    neg_split_df.loc[:, "neg_pred"], neg_split_df.loc[:, "neg_conf"] = neg_pred, neg_conf
+    neg_split_df = split_df[~pos_indices].copy()
+    neg_split_df.loc[:, "neg_pred"] = 0.0
+    neg_split_df.loc[:, "neg_conf"] = 0.0
     neg_split_df.loc[:, environ.dataset_info.relevance_col] = 0
 
     split_df = pd.concat([neg_split_df, positive_split_df], axis=0, ignore_index=True)
 
     return split_df
 
-def set_bpr_error(df: pd.DataFrame):
-    diff = df['r_pred'] - df['neg_pred']
-    df.loc[:, "bpr_error"] = -torch.log(torch.sigmoid(torch.from_numpy(diff.values)) + 1e-8)
+def set_bpr_error(df: pd.DataFrame, relevance_col: str = "rating"):
+    df.loc[:, "bpr_error"] = 0.0
+    mask = df[relevance_col] == 1
+    if mask.any():
+        diff = df.loc[mask, 'r_pred'] - df.loc[mask, 'neg_pred']
+        bpr_err = -torch.log(torch.sigmoid(torch.from_numpy(diff.values)) + 1e-8).numpy()
+        df.loc[mask, "bpr_error"] = bpr_err
     return df
 
 def obtain_neg_scores(model: TorchModel, users_ids: torch.Tensor, data_info:DatasetInfo, device):

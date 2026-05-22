@@ -18,7 +18,7 @@ def set_elementwise_metrics(model, split_df, environ, device):
 
     if environ.learn_to_rank:
         split_df = elementwise_pos_neg_scores(model, split_df, environ, device)
-        set_bpr_error(split_df)
+        set_bpr_error(split_df, environ.dataset_info.relevance_col)
 
     split_df.loc[:, ABS_ERROR_COL] = abs(split_df[environ.dataset_info.relevance_col] - split_df[environ.dataset_info.r_pred_col])
 
