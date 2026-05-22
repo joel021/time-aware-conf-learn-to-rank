@@ -32,7 +32,7 @@ class Setup:
         self.patience = patience
         self.min_inter_per_user = min_inter_per_user
         self.reevaluate = reevaluate
-        self.learn_to_rank = learn_to_rank
+        self.learn_to_rank = True
         self.k_folds = k_folds
 
         self.set_rate_range(rate_range)

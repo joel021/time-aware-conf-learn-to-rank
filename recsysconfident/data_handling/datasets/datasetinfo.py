@@ -15,7 +15,7 @@ class DatasetInfo:
 
 
     def __init__(self, user_col: str, item_col: str, rating_col: str, interactions_file: str, columns: List[str],
-                 rate_range: List[float], database_name: str, split_run_uri: str, metadata_columns: List[str],
+                 rate_range: List[float], database_name: str, split_run_uri: str = "./", metadata_columns: Optional[List[str]] = None,
                  items_file: Optional[str] = None, sep: str = ",", has_head: bool = False,
                  timestamp_col: Optional[str] = None, batch_size: int = 1024, root_uri: str = "./",
                  k_folds: int = 5, split_position: int = 0):
@@ -37,7 +37,7 @@ class DatasetInfo:
 
         # Dataset Structure Info
         self.columns: List[str] = columns
-        self.metadata_columns: List[str] = metadata_columns
+        self.metadata_columns: List[str] = metadata_columns or []
         self.rate_range: List[float] = rate_range
         self.sep: str = sep
         self.has_head: bool = has_head
@@ -68,7 +68,13 @@ class DatasetInfo:
         self.items_df = items_df
 
         self._split_interactions(shuffle)
-        self.items_per_user = self._get_user_item_sets(self.ratings_df)
+        
+        # Initialize items_per_user with empty sets/lists for all unique users
+        self.items_per_user = {int(u): (set(), []) for u in self.ratings_df[self.user_col].unique()}
+        pos_ratings_df = self.ratings_df[self.ratings_df[self.relevance_col] == 1]
+        pos_user_item_dict = self.get_user_item_sets(pos_ratings_df)
+        pos_user_item_dict = {int(k): v for k, v in pos_user_item_dict.items()}
+        self.items_per_user.update(pos_user_item_dict)
 
         print(f"{len(list(self.items_per_user.keys()))} mapped users sequentially!")
 
@@ -97,7 +103,11 @@ class DatasetInfo:
                 self.items_df = read_csv(items_path)
                 self.items_df.set_index(self.item_col, inplace=True, drop=True)
         else:
-            self.ratings_df = filter_positives(self.ratings_df, self.relevance_col, self.ratio_t)
+            relevance_max = self.ratings_df[self.relevance_col].max()
+            pos_mask = self.ratings_df[self.relevance_col] >= (relevance_max * self.ratio_t)
+            self.ratings_df = self.ratings_df.copy()
+            self.ratings_df.loc[pos_mask, self.relevance_col] = 1.0
+            self.ratings_df.loc[~pos_mask, self.relevance_col] = 0.0
 
             self.ratings_df, self.items_df = map_ids(self.ratings_df, self.items_df, self.user_col, self.item_col)
 
@@ -130,7 +140,7 @@ class DatasetInfo:
 
         return self
 
-    def _get_user_item_sets(self, df: DataFrame) -> Dict:
+    def get_user_item_sets(self, df: DataFrame) -> Dict:
         """
         Computes a dictionary mapping users to their rated items and relevance scores.
         """

@@ -42,7 +42,7 @@ class Environment:
         self.root_path = root_path
         self.conf_calibration = conf_calibration
         self.min_inter_per_user = min_inter_per_user
-        self.learn_to_rank = learn_to_rank
+        self.learn_to_rank = True
         self.shuffle = shuffle
         self.k_folds = k_folds
 

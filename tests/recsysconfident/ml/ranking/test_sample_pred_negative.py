@@ -22,7 +22,7 @@ class TestSamplePredNegatives(unittest.TestCase):
         n_items = 10  # Total number of items
         num_negatives = 4  # Number of negative samples.  Changed to 2 for easier verification
 
-        self.rank_generator = SamplePredNegatives(self.datainfo, n_items, num_negatives)
+        self.rank_generator = SamplePredNegatives(self.datainfo, num_negatives)
 
     def test_sample_negative_candidates_sets(self):
 

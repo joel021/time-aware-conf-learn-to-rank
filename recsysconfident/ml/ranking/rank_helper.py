@@ -5,11 +5,12 @@ import torch
 from recsysconfident.ml.models.torchmodel import TorchModel
 
 
-def sample_unseen_item(seen: tuple, num_items: int, max_tries: int=20) -> int:
+def sample_unseen_item(seen, num_items: int, max_tries: int=100) -> int:
 
     tries = 0
     unseen_item_id = torch.randint(0, num_items, (1,)).item()
-    while unseen_item_id in seen[0]: #tuple with: itemId, X|None, rating
+    seen_set = seen[0] if isinstance(seen, tuple) else seen
+    while unseen_item_id in seen_set: #tuple with: itemId, X|None, rating
         unseen_item_id = torch.randint(0, num_items, (1,)).item()
         tries += 1
         if tries >= max_tries:
