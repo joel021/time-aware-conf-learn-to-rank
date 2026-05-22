@@ -1,49 +1,79 @@
-# setup for development
+# RecSysConfident
 
-# Install dependencies</h1>
-    
-    * run ```$pip install -r requirements.txt```
+A Python framework for robust recommender system experiments. The framework is structured to evaluate recommendation models with a focus on Learn-to-Rank (BPR) approaches using time-aware cross-validation.
 
-    * Install pytorch
-    * pip install torch-geometric torch-sparse torch-scatter torch-cluster torch-spline-conv pyg-lib -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+---
 
-# Run setup.py for dev environment:
+## 1. Installation & Setup
 
-    ```$python setup.py develop ```
+We recommend using **Poetry** to manage dependencies.
 
-# Run the tests:
-
-    ```$pytest tests``` run all tests
-
-    ```$pytest tests/.../file.py``` run especific python file
-
-
-# Configure poetry to create virtual environment locally
+### Configure Poetry to create a local virtual environment
+```bash
 poetry config virtualenvs.in-project true
+poetry install
+```
 
+### Manual Installation (Alternative)
+```bash
+pip install -r requirements.txt
+# Install PyTorch and PyTorch Geometric dependencies:
+pip install torch-geometric torch-sparse torch-scatter torch-cluster torch-spline-conv pyg-lib -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+```
 
-# Project structure
+---
 
-- recsysconfident: the main package
-  - data_handling: responsible for any data preprocessing, dataset buildings, and dataloaders
-  - ml: everything related to machine learning
-    - fitting: responsible for perform the fit and evaluation of the models
-    - models: Where the models implementations are. Each model implementation should have its on class on its on file. Additionally, the method of instantiating the model and its compatible dataloader should be implemented along with the model class.
-  - utils: utilities scripts
+## 2. Running Experiments & Tests
 
-- files:
-  - data/{database_name}/info.json: Describes the database parameters, such as its columns, which one are used and how many columns are in the dataset
-  - setups.json: Describes the supported setups of experiments.
+### Run the Full Experiment Pipeline
+Run the Matrix Factorization setup on `ml-100k`:
+```bash
+poetry run python main.py --setups ./setups/mf.json
+```
 
-- supported datasets and models:
-  - recsysconfident/environment.Environment.database_name_fn: Defines which databases are supported to perform experiments. Add or remove instances from this dictionary to control the supported datasets.
-  - recsysconfident/environment.Environment.model_name_fn: Defines which models are supported to perform experiments.
+### Run the Test Suite
+Run all unit and integration tests (including the end-to-end main flow integration test):
+```bash
+poetry run pytest tests
+```
 
-- setups: Are the set of configurations that describes an experiment.
-- when running main.py with --setup_instance: means that you probably want to rexecute an experiment, also provide --fit_mode to specify whether you want to fit the model or just rerun the evaluation.
+---
 
+## 3. Project Architecture
 
-** Setups Examples**
+* **`recsysconfident`**: The core package.
+  * **`data_handling`**: Preprocessing, dataset readers, and custom dataloaders.
+    * `datasets/`: Contains dataset readers (`movie_lens_reader.py`, etc.) and `datasetinfo.py` which manages data partitioning and directory structures.
+    * `dataloader/`: Contains dataloaders, such as `int_ui_ids_dataloader.py` for training batches.
+  * **`ml`**: Machine learning components.
+    * `fitting/`: Handles the fit and early stopping loops for different models.
+    * `models/`: Implementations of recommendation models (MF, LightGCN, DGAT, etc.) registering their architectures and compatible dataloaders.
+    * `ranking/`: Code for rank metrics and element-wise/BPR loss error calculation.
+    * `eval/`: Pipeline evaluation steps and metrics export.
+  * **`utils`**: General helper scripts for file operations and configuration parsing.
 
-- python main.py --setups ./setups-conf-benchmark.json --setup_name k_folds --k_folds 5 
-- 
+---
+
+## 4. Key Design Choices & Architecture
+
+### A. Time Series Cross-Validation
+- **Strategy**: Instead of randomized Monte Carlo cross-validation, the framework uses a chronological **Time Series Cross-Validation** strategy.
+- **Data Splitting**:
+  - The dataset is sorted chronologically and partitioned into $k$ splits.
+  - For fold $i$, folds $[0 \dots i]$ are used for training (`ratings.fit.csv`), and fold $i+1$ is used for evaluation/testing (`ratings.test.csv`).
+  - No physical validation split is written to disk. Early stopping is performed using a duplicated in-memory `val_df` mapped from the test set.
+
+### B. Enforced Learn-to-Rank (LTR) Focus
+- The system is configured globally to operate under a Learn-to-Rank approach (`learn_to_rank = True`).
+- **Binarization**: Ratings above a specified relevance threshold are binarized to `1.0` (positives), and ratings below the threshold are mapped to `0.0` (negatives). Both types of interactions are preserved in the training and testing datasets on disk.
+- **Negative Feedback in Training**:
+  - To properly compute BPR loss, the user's positive interactions dictionary (`self.items_per_user`) is built using only positive interactions (`relevance == 1`).
+  - Consequently, low-relevance (`relevance == 0`) and unobserved items are correctly treated as negatives by the BPR negative sampler.
+  - Training dataloaders filter incoming training data to keep only `relevance == 1` samples, while test dataloaders evaluate on the full, unfiltered test splits.
+
+### C. Distance Metrics & BPR Errors under LTR
+- **Distance Metrics**: Since BPR scores are unconstrained real values representing relative preference (and not absolute rating predictions), standard distance metrics like MAE and RMSE are bypassed and return `0.0` when running in Learn-to-Rank mode.
+- **BPR Error Calculation**: BPR errors are restricted exclusively to actual positive interactions (`relevance == 1`). Negative test interactions (`relevance == 0`) have their negative predicted score set to `0.0` and their elementwise BPR error zeroed out.
+
+### D. Removal of Confidence Calibration
+- The confidence calibration feature has been completely removed from the system. `conf_calibration` is globally set to `False` by default, and all threshold-tuning, calibration loops, and calibrated metrics outputs have been simplified/deleted to ensure performance and simplicity.
